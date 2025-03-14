@@ -1,0 +1,30 @@
+[submodule "usbx"]
+	path = usbx
+	url = https://github.com/eclipse-threadx/usbx
+[submodule "threadx"]
+	path = threadx
+	url = https://github.com/eclipse-threadx/threadx
+[submodule "filex"]
+	path = filex
+	url = https://github.com/eclipse-threadx/filex
+[submodule "netxduo"]
+	path = netxduo
+	url = https://github.com/eclipse-threadx/netxduo
+[submodule "levelx"]
+	path = levelx
+	url = https://github.com/eclipse-threadx/levelx
+[submodule "supported-platforms"]
+	path = supported-platforms
+	url = https://github.com/eclipse-threadx/supported-platforms.git
+[submodule "stm32xx_library/stm32f7xx-hal-driver"]
+	path = stm32xx_library/stm32f7xx-hal-driver
+	url = https://github.com/STMicroelectronics/stm32f7xx-hal-driver.git
+[submodule "stm32xx_library/cmsisdeviceststm32f7xx"]
+	path = stm32xx_library/cmsisdeviceststm32f7xx
+	url = https://github.com/STMicroelectronics/cmsis-device-f7.git
+[submodule "stm32xx_library/cmsis/device/st/stm32f7xx"]
+	path = stm32xx_library/cmsis/device/st/stm32f7xx
+	url = https://github.com/STMicroelectronics/cmsis-device-f7.git
+[submodule "rtos-docs"]
+	path = rtos-docs
+	url = https://github.com/eclipse-threadx/rtos-docs.git

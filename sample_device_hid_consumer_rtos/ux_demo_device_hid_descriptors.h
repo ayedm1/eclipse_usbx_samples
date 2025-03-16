@@ -30,8 +30,9 @@ extern "C" {
 #include "ux_api.h"
 
 #define DEMO_HID_BOOT_DEVICE
+
 #define UX_DEMO_HID_DEVICE_VID          0x070A
-#define UX_DEMO_HID_DEVICE_PID          0x4026
+#define UX_DEMO_HID_DEVICE_PID          0x4027
 
 #define UX_DEMO_BCD_USB                 0x0200
 

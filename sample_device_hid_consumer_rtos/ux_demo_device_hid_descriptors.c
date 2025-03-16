@@ -20,57 +20,37 @@
 /**************************************************************************/
 /**************************************************************************/
 
+
 #include "ux_demo_device_hid_descriptors.h"
 
 UCHAR hid_report[] = {
-    0x05, 0x01,         // USAGE_PAGE (Generic Desktop)
-    0x09, 0x06,         // USAGE (Keyboard)
-    0xa1, 0x01,         // COLLECTION (Application)
+    0x05, 0x0C,         // USAGE_PAGE (Consumer Devices)
+    0x09, 0x01,         // USAGE (Consumer)
+    0xA1, 0x01,         // COLLECTION (Application)
 
-    /* Modifier Keys (Shift, Ctrl, Alt, GUI) */
-    0x05, 0x07,         //     USAGE_PAGE (Key Codes)
-    0x19, 0xE0,         //     USAGE_MINIMUM (Left Control)
-    0x29, 0xE7,         //     USAGE_MAXIMUM (Right GUI)
-    0x15, 0x00,         //     LOGICAL_MINIMUM (0)
-    0x25, 0x01,         //     LOGICAL_MAXIMUM (1)
-    0x75, 0x01,         //     REPORT_SIZE (1)
-    0x95, 0x08,         //     REPORT_COUNT (8)
-    0x81, 0x02,         //     INPUT (Data, Variable, Absolute)
+    0x15, 0x00,         //   LOGICAL_MINIMUM (0)
+    0x26, 0xFF, 0x03,   //   LOGICAL_MAXIMUM (0x03FF)
+    0x75, 0x10,         //   REPORT_SIZE (16 bits per report)
+    0x95, 0x01,         //   REPORT_COUNT (1 event at a time)
 
-    /* Reserved byte */
-    0x75, 0x08,         //     REPORT_SIZE (8)
-    0x95, 0x01,         //     REPORT_COUNT (1)
-    0x81, 0x01,         //     INPUT (Constant)
+    /* Screen Brightness Usages */
+    0x09, 0x6F,         //   USAGE (Brightness Up)   -> event number 1
+    0x09, 0x70,         //   USAGE (Brightness Down) -> event number 2
 
-    /* Key Array (6-Key Rollover) */
-    0x05, 0x07,         //     USAGE_PAGE (Key Codes)
-    0x19, 0x00,         //     USAGE_MINIMUM (0)
-    0x29, 0x65,         //     USAGE_MAXIMUM (101)
-    0x15, 0x00,         //     LOGICAL_MINIMUM (0)
-    0x25, 0x65,         //     LOGICAL_MAXIMUM (101)
-    0x75, 0x08,         //     REPORT_SIZE (8)
-    0x95, 0x06,         //     REPORT_COUNT (6)
-    0x81, 0x00,         //     INPUT (Data, Array) - Key array
+    /* Media Control Usages */
+    0x09, 0xE9,         //   USAGE (Volume Up)      -> event number 3
+    0x09, 0xEA,         //   USAGE (Volume Down)    -> event number 4
+    0x09, 0xE2,         //   USAGE (Mute)           -> event number 5
+    0x09, 0xCD,         //   USAGE (Play/Pause)     -> event number 6
+    0x09, 0xB5,         //   USAGE (Next Track)     -> event number 7
+    0x09, 0xB6,         //   USAGE (Previous Track) -> event number 8
 
-    /* LED Output (Caps Lock, Num Lock, etc.) */
-    0x05, 0x08,         //     Usage Page (LEDs)
-    0x19, 0x01,         //     Usage Minimum (Num Lock)
-    0x29, 0x05,         //     Usage Maximum (Kana)
-    0x15, 0x00,         //     Logical Minimum (0)
-    0x25, 0x01,         //     Logical Maximum (1)
-    0x75, 0x01,         //     Report Size (1)
-    0x95, 0x05,         //     Report Count (5)
-    0x91, 0x02,         //     OUTPUT (Data, Variable, Absolute)
+    0x81, 0x00,         //   INPUT (Data, Array, Absolute) - Sends one event at a time
 
-    /* Padding to make LED section byte-aligned */
-    0x75, 0x03,         //     Report Size (3)
-    0x95, 0x01,         //     Report Count (1)
-    0x91, 0x01,         //     OUTPUT (Constant, Array, Absolute)
-
-    0xc0                // End Collection
+    0xC0                // End Collection
 };
 
-#define UX_HID_KEYBOARD_REPORT_LENGTH (sizeof(hid_report)/sizeof(hid_report[0]))
+#define UX_HID_CONSUMER_REPORT_LENGTH (sizeof(hid_report)/sizeof(hid_report[0]))
 
 UCHAR ux_demo_device_framework_full_speed[] = {
     /* Device Descriptor */
@@ -109,7 +89,7 @@ UCHAR ux_demo_device_framework_full_speed[] = {
     0x01,                       /* bNumEndpoints */
     0x03,                       /* bInterfaceClass : 0x03 : HID */
     UX_DEMO_HID_SUBCLASS,       /* bInterfaceSubClass : ... : Boot/non-boot Subclass */
-    0x01,                       /* bInterfaceProtocol : 0x00 : Undefined */
+    0x00,                       /* bInterfaceProtocol : 0x00 : Undefined */
     0x00,                       /* iInterface */
 
     /* HID Descriptor */
@@ -119,7 +99,7 @@ UCHAR ux_demo_device_framework_full_speed[] = {
     0x21,                       /* bCountryCode : 33 : US */
     0x01,                       /* bNumDescriptors */
     0x22,                       /* bReportDescriptorType1 : 0x22 : Report descriptor */
-    UX_W0(UX_HID_KEYBOARD_REPORT_LENGTH), UX_W1(UX_HID_KEYBOARD_REPORT_LENGTH), /* wDescriptorLength1 */
+    UX_W0(UX_HID_CONSUMER_REPORT_LENGTH), UX_W1(UX_HID_CONSUMER_REPORT_LENGTH), /* wDescriptorLength1 */
 
     /* Endpoint Descriptor */
     0x07,                           /* bLength */
@@ -132,7 +112,7 @@ UCHAR ux_demo_device_framework_full_speed[] = {
                                     /* D3..2, Synchronization Type : 0x0 : No Synchronization */
                                     /* D5..4, Usage Type : 0x0 : Data endpoint */
     UX_W0(UX_DEMO_HID_ENDPOINT_SIZE), UX_W1(UX_DEMO_HID_ENDPOINT_SIZE), /* wMaxPacketSize */
-                                    /* D10..0, Max Packet Size */
+                                    /* D10..0, Max Packet Size : 8 */
                                     /* D12..11, Additional transactions : 0x00 */
     UX_DEMO_HID_ENDPOINT_BINTERVAL, /* bInterval : 8 : 8ms / x128 (FS 128ms/HS 16ms) */
 };
@@ -186,7 +166,7 @@ UCHAR ux_demo_device_framework_high_speed[] = {
     0x01,                       /* bNumEndpoints */
     0x03,                       /* bInterfaceClass : 0x03 : HID */
     UX_DEMO_HID_SUBCLASS,       /* bInterfaceSubClass : ... : Boot/non-boot Subclass */
-    0x01,                       /* bInterfaceProtocol : 0x00 : Undefined */
+    0x00,                       /* bInterfaceProtocol : 0x00 : Undefined */
     0x00,                       /* iInterface */
 
     /* HID Descriptor */
@@ -196,7 +176,7 @@ UCHAR ux_demo_device_framework_high_speed[] = {
     0x21,                       /* bCountryCode : 33 : US */
     0x01,                       /* bNumDescriptors */
     0x22,                       /* bReportDescriptorType1 : 0x22 : Report descriptor */
-    UX_W0(UX_HID_KEYBOARD_REPORT_LENGTH), UX_W1(UX_HID_KEYBOARD_REPORT_LENGTH), /* wDescriptorLength1  */
+    UX_W0(UX_HID_CONSUMER_REPORT_LENGTH), UX_W1(UX_HID_CONSUMER_REPORT_LENGTH), /* wDescriptorLength1  */
 
     /* Endpoint Descriptor */
     0x07,                           /* bLength */
@@ -209,7 +189,7 @@ UCHAR ux_demo_device_framework_high_speed[] = {
                                     /* D3..2, Synchronization Type : 0x0 : No Synchronization */
                                     /* D5..4, Usage Type : 0x0 : Data endpoint */
     UX_W0(UX_DEMO_HID_ENDPOINT_SIZE), UX_W1(UX_DEMO_HID_ENDPOINT_SIZE), /* wMaxPacketSize */
-                                    /* D10..0, Max Packet Size */
+                                    /* D10..0, Max Packet Size : 8 */
                                     /* D12..11, Additional transactions : 0x00 */
     UX_DEMO_HID_ENDPOINT_BINTERVAL, /* bInterval : 8 : 8ms / x128 (FS 128ms/HS 16ms) */
 };
@@ -228,7 +208,7 @@ UCHAR ux_demo_string_framework[] = {
 
     /* Product string descriptor : Index 2 */
     0x09, 0x04, 0x02, 17,
-    'H', 'I', 'D', ' ', 'K', 'e', 'y', 'b', 'o', 'a', 'r', 'd', ' ', 'D', 'e', 'm', 'o',
+    'H', 'I', 'D', ' ', 'C', 'o', 'n', 's', 'u', 'm', 'e', 'r', ' ', 'D', 'e', 'm', 'o',
 
     /* Serial Number string descriptor : Index 3 */
     0x09, 0x04, 0x03, 0x04,

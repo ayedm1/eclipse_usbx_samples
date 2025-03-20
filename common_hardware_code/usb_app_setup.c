@@ -38,9 +38,11 @@ UINT    status =  0;
    return;
 
 
-  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x120);
+#ifdef DEMO_DEVICE_HID
+  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x200);
   HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x80);
   HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, 0x100);
+#endif /* DEMO_DEVICE_HID */
 
   HAL_PCD_Start(&hpcd_USB_OTG_HS);
 }

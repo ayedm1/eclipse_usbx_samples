@@ -16,46 +16,15 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
+#include "ux_api.h"
+
 #include "common_hardware_code.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
 
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
-/* USER CODE BEGIN PFP */
 
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
@@ -64,43 +33,16 @@ static void MX_GPIO_Init(void);
 void board_setup(void)
 {
 
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
-  /* MPU Configuration--------------------------------------------------------*/
   MPU_Config();
 
-  /* Enable the CPU Cache */
-
   SCB_EnableICache();
-
-  /* Enable D-Cache---------------------------------------------------------*/
   SCB_EnableDCache();
 
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
   SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  /* USER CODE BEGIN 2 */
-
-  /* USER CODE END 2 */
-
-  /* USER CODE END 3 */
 }
 
 /**
@@ -260,3 +202,30 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
+#if defined(UX_STANDALONE)
+#include <intrinsics.h>
+ALIGN_TYPE _ux_utility_interrupt_disable(VOID)
+{
+  __istate_t interrupt_save;
+  interrupt_save = __get_interrupt_state();
+  __disable_interrupt();
+  return interrupt_save;
+}
+
+
+VOID _ux_utility_interrupt_restore(ALIGN_TYPE flags)
+{
+  __set_interrupt_state(flags);
+
+}
+
+/* Time Tick Get for host timing  */
+ULONG _ux_utility_time_get(VOID)
+{
+#if UX_PERIODIC_RATE != 1000
+#warning UX_PERIODIC_RATE should be 1000 for 1ms tick
+#endif
+  return(HAL_GetTick());
+}
+#endif

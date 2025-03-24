@@ -82,4 +82,3 @@
 #define UX_MAX_DEVICE_INTERFACES          1
 
 #endif  /* UX_USER_H */
-

@@ -31,14 +31,14 @@ UINT ux_demo_device_hid_callback(UX_SLAVE_CLASS_HID *hid_instance, UX_SLAVE_CLAS
 UINT ux_demo_device_hid_get_callback(UX_SLAVE_CLASS_HID *hid_instance, UX_SLAVE_CLASS_HID_EVENT *hid_event);
 
 /**************************************************/
-/**  usbx device hid demo thread                  */
+/**  usbx device hid demo task                    */
 /**************************************************/
-VOID ux_demo_device_hid_thread_entry(ULONG thread_input);
+VOID ux_demo_device_hid_task(VOID);
 
 /**************************************************/
-/**  usbx application initialization with RTOS    */
+/**  usbx application initialization              */
 /**************************************************/
-VOID tx_application_define(VOID *first_unused_memory);
+VOID ux_application_define(VOID);
 
 /**************************************************/
 /**  usbx device hid demo consumer                */
@@ -51,37 +51,31 @@ UINT ux_demo_hid_consumer_brightness_control(UX_SLAVE_CLASS_HID *device_hid);
 /**************************************************/
 UX_SLAVE_CLASS_HID *hid_consumer;
 
-/**************************************************/
-/**  thread object                                */
-/**************************************************/
-static TX_THREAD ux_hid_thread;
+static CHAR ux_system_memory_pool[UX_DEVICE_MEMORY_STACK_SIZE];
 
 int main(void)
 {
     /* Initialize the board.  */
     board_setup();
 
-    /* Enter the ThreadX kernel.  */
-    tx_kernel_enter();
+    ux_application_define();
 
     while (1)
     {
+        ux_system_tasks_run();
+        ux_demo_device_hid_task();
     }
 
 }
 
-VOID tx_application_define(VOID *first_unused_memory)
+VOID ux_application_define(VOID)
 {
-CHAR                            *stack_pointer;
 CHAR                            *memory_pointer;
 UINT                            status;
 UX_SLAVE_CLASS_HID_PARAMETER    hid_consumer_parameter;
 
-    /* Initialize the free memory pointer.  */
-    stack_pointer =  (CHAR *) first_unused_memory;
-
-    /* Initialize the RAM disk memory. */
-    memory_pointer =  stack_pointer +  DEMO_STACK_SIZE;
+    /* Use static memory block.  */
+    memory_pointer = ux_system_memory_pool;
 
     /* Initialize USBX Memory */
     status = ux_system_initialize(memory_pointer, UX_DEVICE_MEMORY_STACK_SIZE, UX_NULL, 0);
@@ -119,13 +113,7 @@ UX_SLAVE_CLASS_HID_PARAMETER    hid_consumer_parameter;
     if(status != UX_SUCCESS)
         return;
 
-    /* Create the main demo thread.  */
-    status = ux_utility_thread_create(&ux_hid_thread, "hid_usbx_app_thread_entry",
-                                      ux_demo_device_hid_thread_entry, 0, stack_pointer,
-                                      512, 20, 20, 1, TX_AUTO_START);
-
-    if(status != UX_SUCCESS)
-        return;
+    usb_device_initialize();
 }
 
 /********************************************************************/
@@ -168,23 +156,36 @@ UINT ux_demo_device_hid_get_callback(UX_SLAVE_CLASS_HID *hid_instance, UX_SLAVE_
     return UX_SUCCESS;
 }
 
+
 /********************************************************************/
-/**  ux_demo_device_hid_thread_entry: hid demo thread               */
+/**  demo_delay_with_tasks_running: delay with tasks               */
 /********************************************************************/
-VOID ux_demo_device_hid_thread_entry(ULONG thread_input)
+static void demo_delay_with_tasks_running(ULONG ms_wait)
+{
+ULONG ticks;
+
+    /* Get current time.  */
+    ticks = ux_utility_time_get();
+
+    /* Wait until timeout.  */
+    while(ux_utility_time_elapsed(ticks, ux_utility_time_get()) < UX_MS_TO_TICK_NON_ZERO(ms_wait))
+    {
+        ux_system_tasks_run();
+    }
+}
+
+/********************************************************************/
+/**  ux_demo_device_hid_task: hid demo task                         */
+/********************************************************************/
+VOID ux_demo_device_hid_task(VOID)
 {
 UINT            status;
-UINT            demo_state = 0;
+static UINT     demo_state = 0;
 
-    UX_PARAMETER_NOT_USED(thread_input);
 
-    usb_device_initialize();
-
-    while (1)
+    /* Check if the device state already configured.  */
+    if ((UX_SLAVE_DEVICE_CHECK_STATE(UX_DEVICE_CONFIGURED)) && (hid_consumer != UX_NULL))
     {
-      /* Check if the device state already configured.  */
-      if ((UX_SLAVE_DEVICE_CHECK_STATE(UX_DEVICE_CONFIGURED)) && (hid_consumer != UX_NULL))
-      {
         switch(demo_state)
         {
 
@@ -209,17 +210,8 @@ UINT            demo_state = 0;
           break;
 
         default:
-
-          ux_utility_delay_ms(MS_TO_TICK(10));
-
           break;
         }
-      }
-      else
-      {
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
-      }
     }
 }
 
@@ -246,8 +238,7 @@ static UCHAR              volume_level = 100;
     {
     case UX_CONSUMER_MEDIA_VOLUME_DOWN:
 
-        /* Sleep thread for 50ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(50));
+        demo_delay_with_tasks_running(50);
 
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0x04;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
@@ -261,8 +252,7 @@ static UCHAR              volume_level = 100;
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         status = ux_device_class_hid_event_set(device_hid, &device_hid_event);
 
@@ -278,8 +268,7 @@ static UCHAR              volume_level = 100;
 
     case UX_CONSUMER_MEDIA_VOLUME_UP:
 
-        /* Sleep thread for 50ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(50));
+        demo_delay_with_tasks_running(50);
 
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0x03;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
@@ -293,8 +282,7 @@ static UCHAR              volume_level = 100;
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         status = ux_device_class_hid_event_set(device_hid, &device_hid_event);
 
@@ -310,8 +298,7 @@ static UCHAR              volume_level = 100;
 
     case UX_CONSUMER_MEDIA_MUTE:
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0x05;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
@@ -325,8 +312,7 @@ static UCHAR              volume_level = 100;
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         status = ux_device_class_hid_event_set(device_hid, &device_hid_event);
 
@@ -339,8 +325,7 @@ static UCHAR              volume_level = 100;
 
     case UX_CONSUMER_MEDIA_UNMUTE:
 
-        /* Sleep thread for 100ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(100));
+        demo_delay_with_tasks_running(500);
 
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0x05;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
@@ -354,8 +339,7 @@ static UCHAR              volume_level = 100;
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         status = ux_device_class_hid_event_set(device_hid, &device_hid_event);
 
@@ -368,8 +352,7 @@ static UCHAR              volume_level = 100;
 
     case UX_CONSUMER_MEDIA_PLAY:
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0x06;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
@@ -383,8 +366,7 @@ static UCHAR              volume_level = 100;
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         status = ux_device_class_hid_event_set(device_hid, &device_hid_event);
 
@@ -397,8 +379,7 @@ static UCHAR              volume_level = 100;
 
     case UX_CONSUMER_MEDIA_PAUSE:
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0x06;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
@@ -412,8 +393,7 @@ static UCHAR              volume_level = 100;
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         status = ux_device_class_hid_event_set(device_hid, &device_hid_event);
 
@@ -426,8 +406,7 @@ static UCHAR              volume_level = 100;
 
     case UX_CONSUMER_MEDIA_NEXT_TRACK:
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0x07;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
@@ -441,8 +420,7 @@ static UCHAR              volume_level = 100;
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         status = ux_device_class_hid_event_set(device_hid, &device_hid_event);
 
@@ -455,8 +433,7 @@ static UCHAR              volume_level = 100;
 
     case UX_CONSUMER_MEDIA_PREVIOUS_TRACK:
 
-        /* Sleep thread for 2s.  */
-        ux_utility_delay_ms(MS_TO_TICK(2000));
+        demo_delay_with_tasks_running(2000);
 
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0x08;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
@@ -470,8 +447,7 @@ static UCHAR              volume_level = 100;
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         status = ux_device_class_hid_event_set(device_hid, &device_hid_event);
 
@@ -514,8 +490,7 @@ static UCHAR              brightness_level = 100;
     {
     case UX_CONSUMER_BRIGHTNESS_DOWN:
 
-        /* Sleep thread for 500ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(500));
+        demo_delay_with_tasks_running(50);
 
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0x02;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
@@ -529,8 +504,7 @@ static UCHAR              brightness_level = 100;
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         status = ux_device_class_hid_event_set(device_hid, &device_hid_event);
 
@@ -546,8 +520,7 @@ static UCHAR              brightness_level = 100;
 
     case UX_CONSUMER_BRIGHTNESS_UP:
 
-        /* Sleep thread for 500ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(500));
+        demo_delay_with_tasks_running(50);
 
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0x01;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
@@ -561,8 +534,7 @@ static UCHAR              brightness_level = 100;
         device_hid_event.ux_device_class_hid_event_buffer[0] = 0;
         device_hid_event.ux_device_class_hid_event_buffer[1] = 0;
 
-        /* Sleep thread for 10ms.  */
-        ux_utility_delay_ms(MS_TO_TICK(10));
+        demo_delay_with_tasks_running(10);
 
         status = ux_device_class_hid_event_set(device_hid, &device_hid_event);
 

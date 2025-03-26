@@ -15,10 +15,11 @@ void usb_device_initialize()
 {
 UINT    status =  0;
 
-  /* USER CODE END USB_OTG_HS_Init 1 */
+  memset(&hpcd_USB_OTG_HS, 0x0, sizeof(PCD_HandleTypeDef));
+
   hpcd_USB_OTG_HS.Instance = USB_OTG_HS;
-  hpcd_USB_OTG_HS.Init.dev_endpoints = 8;
-  hpcd_USB_OTG_HS.Init.speed = PCD_SPEED_HIGH;
+  hpcd_USB_OTG_HS.Init.dev_endpoints = 9;
+  hpcd_USB_OTG_HS.Init.speed = PCD_SPEED_FULL;
   hpcd_USB_OTG_HS.Init.dma_enable = DISABLE;
   hpcd_USB_OTG_HS.Init.phy_itface = USB_OTG_ULPI_PHY;
   hpcd_USB_OTG_HS.Init.Sof_enable = DISABLE;
@@ -38,9 +39,9 @@ UINT    status =  0;
    return;
 
 
-  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x120);
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x80);
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, 0x100);
+  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x200);
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x80); /* EP00 - 16 * 4 = 64  */
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, 0x100); /* EP81 - 128 * 4 = 512  */
 
   HAL_PCD_Start(&hpcd_USB_OTG_HS);
 }
